@@ -3,7 +3,7 @@
 --use IEEE.STD_LOGIC_ARITH.all;
 --use IEEE.STD_LOGIC_UNSIGNED.all;
 use ieee.numeric_std.all;
---use ieee.numeric_std_unsigned.all ;
+use ieee.numeric_std_unsigned.all ;
 
     use std.textio.all;
 USE IEEE.STD_LOGIC_TEXTIO.ALL;
@@ -14,13 +14,13 @@ use work.ghdl_access.all;
     END top;
 
     ARCHITECTURE behavior OF top IS 
-      COMPONENT top  
-      PORT(
-        clk_in : IN  std_logic;
-        reset  : IN  std_logic;
-        clk_out: OUT std_logic
-      );
-      END COMPONENT;
+      --COMPONENT top  
+      --PORT(
+        --clk_in : IN  std_logic;
+        --reset  : IN  std_logic;
+        --clk_out: OUT std_logic
+      --);
+      --END COMPONENT;
 
       -- Inputs
       signal clk_in  : std_logic := '0';
@@ -230,7 +230,7 @@ use work.ghdl_access.all;
     PHASE_ZERO     => PHASE_ZERO,
     FLASH_CLK      => flash_clk(22),
     reset          => reset,
-    cpu            => status(1),
+    cpu            => '0',
     ADDR           => ADDR,
     ram_addr       => a_ram,
     D              => D,
@@ -309,7 +309,7 @@ use work.ghdl_access.all;
 
 	    
 
-color<= r & g & b;
+color<= std_logic_vector(r) & std_logic_vector(g) & std_logic_vector(b);
 CINT<=to_integer(color);
 
 
@@ -328,7 +328,7 @@ CINT<=to_integer(color);
 --end process;
 process
 begin
-    wait until rising_edge(clk);
+    wait until rising_edge(clk_in);
 
   if (vsync='1') then
      vsi <= 1;
@@ -396,5 +396,5 @@ end process;
         dpi_vga_init(640,400);
             wait;
       end process;
-    END;
+    END ARCHITECTURE;
 

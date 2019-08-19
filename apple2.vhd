@@ -457,18 +457,18 @@ begin
       DO       => T65_DO
     );
 
-  cpu65c02: entity work.R65C02
-    port map (
-        reset => reset_n,
-        clk => CLK_14M,
-        enable => CPU_EN,
-        nmi_n => NMI_N,
-        irq_n => IRQ_N,
-        di => D_IN,
-        do => R65C02_DO,
-        addr => R65C02_A,
-        nwe => R65C02_WE_N
-    );
+--  cpu65c02: entity work.R65C02
+--    port map (
+--        reset => reset_n,
+--        clk => CLK_14M,
+--        enable => CPU_EN,
+--        nmi_n => NMI_N,
+--        irq_n => IRQ_N,
+--        di => D_IN,
+--        do => R65C02_DO,
+--        addr => R65C02_A,
+--        nwe => R65C02_WE_N
+--    );
 
   -- Original Apple had asynchronous ROMs.  We use a synchronous ROM
   -- that needs its address earlier, hence the odd clock.

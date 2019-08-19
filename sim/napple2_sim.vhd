@@ -29,24 +29,6 @@ use work.ghdl_access.all;
       signal clk_out : std_logic;
       constant clk_in_t : time := 20 ns; 
 
-signal VGA_R: std_logic_vector(7 downto 0);
-signal VGA_G: std_logic_vector(7 downto 0);
-signal VGA_B: std_logic_vector(7 downto 0);
-      signal  hsync      : std_logic;
-      signal  vsync      : std_logic;
-      signal  csync      : std_logic;
-      signal audio : std_logic;
-      signal  hblank      : std_logic;
-      signal  vblank      : std_logic;
-      signal  video1 : std_logic;
-      signal  video2 : std_logic;
-      signal  hcnt_o      : std_logic_vector(8 downto 0);
-      signal  vcnt_o      : std_logic_vector(8 downto 0);
-      signal lamp1:std_logic;
-      signal lamp2:std_logic;
-      signal clk6:std_logic;
-      signal vid_mono:std_logic_vector(7 downto 0);
-      signal vid:std_logic_vector(1 downto 0);
       signal color:std_logic_vector(23 downto 0);
       --signal color:unsigned(31 downto 0);
       signal CINT: integer;
@@ -55,88 +37,225 @@ signal VGA_B: std_logic_vector(7 downto 0);
 
 
 
----
+----
 
-        signal CPU_WAIT :  std_logic;
-        -- VGA output
-        signal VGA_DE : std_logic;
-        signal VGA_CLK : std_logic;
-        -- Audio
-        signal AUDIO_L : std_logic_vector(7 downto 0);
-        signal AUDIO_R : std_logic_vector(7 downto 0);
-        signal SPEAKER : std_logic;
+  signal CLK_28M, CLK_14M, CLK_2M, CLK_2M_D, PHASE_ZERO : std_logic;
+  signal clk_div : unsigned(1 downto 0);
+  signal IO_SELECT, DEVICE_SELECT : std_logic_vector(7 downto 0);
+  signal ADDR : unsigned(15 downto 0);
+  signal D, PD: unsigned(7 downto 0);
+  signal DISK_DO, PSG_DO : unsigned(7 downto 0);
+  signal DO : std_logic_vector(15 downto 0);
+  signal aux : std_logic;
+  signal cpu_we : std_logic;
+  signal psg_irq_n, psg_nmi_n : std_logic;
 
-        signal ps2_key        : std_logic_vector(10 downto 0);
+  signal we_ram : std_logic;
+  signal VIDEO, HBL, VBL : std_logic;
+  signal COLOR_LINE : std_logic;
+  signal COLOR_LINE_CONTROL : std_logic;
+  signal SCREEN_MODE : std_logic_vector(1 downto 0);
+  signal GAMEPORT : std_logic_vector(7 downto 0);
+  signal scandoubler_disable : std_logic;
+  signal ypbpr : std_logic;
 
-        signal joy            : std_logic_vector(5 downto 0);
-        signal joy_an         : std_logic_vector(15 downto 0);
+  signal K : unsigned(7 downto 0);
+  signal read_key : std_logic;
+  signal akd : std_logic;
 
-        -- disk control
-        signal TRACK          : unsigned(5 downto 0);
-        signal TRACK_RAM_ADDR : unsigned(12 downto 0);
-        signal TRACK_RAM_DI   : unsigned(7 downto 0);
-        signal TRACK_RAM_WE   : std_logic;
+  signal flash_clk : unsigned(22 downto 0) := (others => '0');
+  signal power_on_reset : std_logic := '1';
+ -- signal reset : std_logic;
 
-        -- main RAM^M
-        signal ram_addr      : std_logic_vector(17 downto 0);
-        signal ram_dout      : std_logic_vector(7 downto 0);
-        signal ram_din       : std_logic_vector(7 downto 0);
-        signal ram_we        : std_logic;
+  signal D1_ACTIVE, D2_ACTIVE : std_logic;
+  signal track_addr : unsigned(13 downto 0);
+  signal TRACK_RAM_ADDR : unsigned(12 downto 0);
+  signal TRACK_RAM_DI : unsigned(7 downto 0);
+  signal TRACK_RAM_WE : std_logic;
+  signal track : unsigned(5 downto 0);
+  signal disk_change : std_logic;
 
-        -- LEDG
-        signal LED           : std_logic;
----
+  signal downl : std_logic := '0';
+  signal io_index : std_logic_vector(4 downto 0);
+  signal size : std_logic_vector(24 downto 0) := (others=>'0');
+  signal a_ram: unsigned(15 downto 0);
+  signal r : unsigned(7 downto 0);
+  signal g : unsigned(7 downto 0);
+  signal b : unsigned(7 downto 0);
+  signal hsync : std_logic;
+  signal vsync : std_logic;
+  signal sd_we : std_logic;
+  signal sd_oe : std_logic;
+  signal sd_addr : std_logic_vector(18 downto 0);
+  signal sd_di : std_logic_vector(7 downto 0);
+  signal sd_do : std_logic_vector(7 downto 0);
+  signal io_we : std_logic;
+  signal io_addr : std_logic_vector(24 downto 0);
+  signal io_do : std_logic_vector(7 downto 0);
+  signal io_ram_we : std_logic;
+  signal io_ram_d : std_logic_vector(7 downto 0);
+  signal io_ram_addr : std_logic_vector(18 downto 0);
+  signal ram_we : std_logic;
+  signal ram_di : std_logic_vector(7 downto 0);
+  signal ram_addr : std_logic_vector(24 downto 0);
+  
+  signal switches   : std_logic_vector(1 downto 0);
+  signal buttons    : std_logic_vector(1 downto 0);
+  signal joy        : std_logic_vector(5 downto 0);
+  signal joy0       : std_logic_vector(31 downto 0);
+  signal joy1       : std_logic_vector(31 downto 0);
+  signal joy_an0    : std_logic_vector(15 downto 0);
+  signal joy_an1    : std_logic_vector(15 downto 0);
+  signal joy_an     : std_logic_vector(15 downto 0);
+  signal status     : std_logic_vector(31 downto 0);
+  signal ps2Clk     : std_logic;
+  signal ps2Data    : std_logic;
+  
+  signal psg_audio_l : unsigned(9 downto 0);
+  signal psg_audio_r : unsigned(9 downto 0);
+  signal audio       : std_logic;
 
+  -- signals to connect sd card emulation with io controller
+  signal sd_lba:  std_logic_vector(31 downto 0);
+  signal sd_rd:   std_logic;
+  signal sd_wr:   std_logic;
+  signal sd_ack:  std_logic;
+  
+  -- data from io controller to sd card emulation
+  signal sd_data_in: std_logic_vector(7 downto 0);
+  signal sd_data_out: std_logic_vector(7 downto 0);
+  signal sd_data_out_strobe:  std_logic;
+  signal sd_buff_addr: std_logic_vector(8 downto 0);
+  
+  -- sd card emulation
+  signal sd_cs:	std_logic;
+  signal sd_sck:	std_logic;
+  signal sd_sdi:	std_logic;
+  signal sd_sdo:	std_logic;
+  
+  signal pll_locked : std_logic;
+  signal sdram_dqm: std_logic_vector(1 downto 0);
+  signal joyx       : std_logic;
+  signal joyy       : std_logic;
+  signal pdl_strobe : std_logic;
 
 
     BEGIN 
 
-apple2: entity work.apple2
-port map(
-        -- Clocks
-        CLK_14M=> clk_in, -- AJS FIX THIS
-        CLK_2M=> clk_in, -- AJS FIX THIS
-        CPU_WAIT=>CPU_WAIT,
 
-        reset=> reset,
 
-        -- VGA output
-        VGA_DE => VGA_DE,
-        VGA_CLK=>VGA_CLK,
-        VGA_HS=>hsync,
-        VGA_VS=>vsync,
-        VGA_R=>VGA_R,
-        VGA_G=>VGA_G,
-        VGA_B=>VGA_B,
-        SCREEN_MODE=>"00",
-        -- Audio
-        AUDIO_L=>AUDIO_L,
-        AUDIO_R=>AUDIO_R,
-        SPEAKER=>SPEAKER,
+  -- In the Apple ][, this was a 555 timer
+  power_on : process(CLK_14M)
+  begin
+    if rising_edge(CLK_14M) then
+      reset <= status(0) or power_on_reset;
 
-        ps2_key=>PS2_KEY,
-        joy=>JOY,
-        joy_an=>JOY_AN,
+      if buttons(1)='1' or status(7) = '1' then
+        power_on_reset <= '1';
+        flash_clk <= (others=>'0');
+      else
+		  if flash_clk(22) = '1' then
+          power_on_reset <= '0';
+			end if;
+			 
+        flash_clk <= flash_clk + 1;
+      end if;
+    end if;
+  end process;
+  
+  --SDRAM_CLK <= CLK_28M;
+  
 
-        -- mocking board
-        mb_enabled=>'0',
-        -- disk control
-        TRACK=>TRACK,
-        TRACK_RAM_ADDR=>TRACK_RAM_ADDR,
-        TRACK_RAM_DI=>TRACK_RAM_DI,
-        TRACK_RAM_WE=>TRACK_RAM_WE,
+ 
+  -- Paddle buttons
+  -- GAMEPORT input bits:
+  --  7    6    5    4    3   2   1    0
+  -- pdl3 pdl2 pdl1 pdl0 pb3 pb2 pb1 casette
+  GAMEPORT <=  "00" & joyy & joyx & "0" & joy(5) & joy(4) & '0';
+  
+  joy_an <= joy_an0 when status(5)='0' else joy_an1;
+  joy <= joy0(5 downto 0) when status(5)='0' else joy1(5 downto 0);
+  
+  process(CLK_14M, pdl_strobe)
+    variable cx, cy : integer range -100 to 5800 := 0;
+  begin
+    if rising_edge(CLK_14M) then
+     CLK_2M_D <= CLK_2M;
+     if CLK_2M_D = '0' and CLK_2M = '1' then
+      if cx > 0 then
+        cx := cx -1;
+        joyx <= '1';
+      else
+        joyx <= '0';
+      end if;
+      if cy > 0 then
+        cy := cy -1;
+        joyy <= '1';
+      else
+        joyy <= '0';
+      end if;
+      if pdl_strobe = '1' then
+        cx := 2800+(22*to_integer(signed(joy_an(15 downto 8))));
+        cy := 2800+(22*to_integer(signed(joy_an(7 downto 0)))); -- max 5650
+        if cx < 0 then
+          cx := 0;
+        elsif cx >= 5590 then
+          cx := 5650;
+        end if;
+        if cy < 0 then
+          cy := 0;
+        elsif cy >= 5590 then
+          cy := 5650;
+        end if;
+      end if;
+     end if;
+    end if;
+  end process;
 
-        -- main RAM
-        ram_addr=>RAM_ADDR,
-        ram_dout=>RAM_DOUT,
-        ram_din=>RAM_DIN,
-        ram_we=>RAM_WE,
+  COLOR_LINE_CONTROL <= COLOR_LINE and not (status(2) or status(3));  -- Color or B&W mode
+  SCREEN_MODE <= status(3 downto 2); -- 00: Color, 01: B&W, 10:Green, 11: Amber
+  
 
-        -- LEDG
-        LED=>LED
-);
+  
+  -- Simulate power up on cold reset to go to the disk boot routine
+  ram_we   <= we_ram when status(7) = '0' else '1';
+  ram_addr <= "000000000" & std_logic_vector(a_ram) when status(7) = '0' else std_logic_vector(to_unsigned(1012,ram_addr'length)); -- $3F4
+  ram_di   <= std_logic_vector(D) when status(7) = '0' else "00000000";
 
-	    
+  PD <= PSG_DO when IO_SELECT(4) = '1' else DISK_DO;
+
+  core : entity work.apple2 port map (
+    CLK_14M        => CLK_14M,
+    CLK_2M         => CLK_2M,
+    PHASE_ZERO     => PHASE_ZERO,
+    FLASH_CLK      => flash_clk(22),
+    reset          => reset,
+    cpu            => status(1),
+    ADDR           => ADDR,
+    ram_addr       => a_ram,
+    D              => D,
+    ram_do         => unsigned(DO),
+    aux            => aux,
+    PD             => PD,
+    CPU_WE         => cpu_we,
+    IRQ_N          => psg_irq_n,
+    NMI_N          => psg_nmi_n,
+    ram_we         => we_ram,
+    VIDEO          => VIDEO,
+    COLOR_LINE     => COLOR_LINE,
+    HBL            => HBL,
+    VBL            => VBL,
+    K              => K,
+    read_key       => read_key,
+    AKD            => akd,
+    AN             => open,
+    GAMEPORT       => GAMEPORT,
+    PDL_strobe     => pdl_strobe,
+    IO_SELECT      => IO_SELECT,
+    DEVICE_SELECT  => DEVICE_SELECT,
+    speaker        => audio
+    );
+
   tv : entity work.tv_controller port map (
     CLK_14M    => CLK_14M,
     VIDEO      => VIDEO,
@@ -153,8 +272,45 @@ port map(
     VGA_B      => b
     );
 
-color<= VGA_R & VGA_G & VGA_B;
---CINT<=to_integer(color);
+  keyboard : entity work.keyboard port map (
+    PS2_Clk  => ps2Clk,
+    PS2_Data => ps2Data,
+    CLK_14M  => CLK_14M,
+    reset    => reset,
+    reads    => read_key,
+    K        => K,
+    akd      => akd
+    );
+
+  disk : entity work.disk_ii port map (
+    CLK_14M        => CLK_14M,
+    CLK_2M         => CLK_2M,
+    PHASE_ZERO     => PHASE_ZERO,
+    IO_SELECT      => IO_SELECT(6),
+    DEVICE_SELECT  => DEVICE_SELECT(6),
+    RESET          => reset,
+    A              => ADDR,
+    D_IN           => D,
+    D_OUT          => DISK_DO,
+    TRACK          => TRACK,
+    TRACK_ADDR     => TRACK_ADDR,
+    D1_ACTIVE      => D1_ACTIVE,
+    D2_ACTIVE      => D2_ACTIVE,
+    ram_write_addr => TRACK_RAM_ADDR,
+    ram_di         => TRACK_RAM_DI,
+    ram_we         => TRACK_RAM_WE
+    );
+
+
+
+ -- LED <= not (D1_ACTIVE or D2_ACTIVE);
+
+
+
+	    
+
+color<= r & g & b;
+CINT<=to_integer(color);
 
 
 --process(vsync,hsync)
@@ -172,7 +328,7 @@ color<= VGA_R & VGA_G & VGA_B;
 --end process;
 process
 begin
-    wait until rising_edge(clk6);
+    wait until rising_edge(clk);
 
   if (vsync='1') then
      vsi <= 1;

@@ -27,7 +27,7 @@ use work.ghdl_access.all;
       signal reset   : std_logic := '0';
       -- Outputs
       signal clk_out : std_logic;
-      constant clk_in_t : time := 20 ns; 
+      constant clk_in_t : time := 71 ns; 
 
       signal color:std_logic_vector(23 downto 0);
       --signal color:unsigned(31 downto 0);
@@ -362,7 +362,7 @@ begin
  write(l,reset);
  writeline(output,l);
  write(l,String'("clk"));
--- write(l,clk_in);
+ write(l,clk_in);
  writeline(output,l);
  --write(l,String'("csync"));
  --write(l,csync);
@@ -385,6 +385,14 @@ end process;
         clk_in <= '1';
         wait for clk_in_t / 2;
       end process;
+
+        clk1: entity work.clkdiv generic map ( DIVRATIO => 7)
+         port map ( clk => CLK_14M,
+         nreset => reset,
+          clkout => CLK_2M);
+
+  CLK_14M<=clk_in;
+
 
       -- Processing.
       stimuli: process

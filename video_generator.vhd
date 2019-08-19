@@ -59,7 +59,7 @@ begin
                     (DL(6) and (ALTCHAR or GR2 or DL(7))) &
                     DL(5 downto 0) & SEGC & SEGB & SEGA;
 
-  videorom : work.spram
+  videorom : entity work.spram
   generic map (12,8,"../roms/video.mif")
   port map (
    address => std_logic_vector(video_rom_addr),

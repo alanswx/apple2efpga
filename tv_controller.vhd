@@ -166,6 +166,7 @@ begin
 				r := X"00"; g := X"0F"; b := X"01"; -- green mode background color
 			when "11" =>
 				r := X"20"; g := X"08"; b := X"01"; -- amber mode background color
+                        when others      => r := X"20"; g := X"08"; b := X"01";
 		end case;
 		
       if video_active = '1' then
@@ -183,6 +184,7 @@ begin
 						r := X"00"; g := X"C0"; b := X"01"; -- green
 					when "11" =>
 						r := X"FF"; g := X"80"; b := X"01"; -- amber 
+                                       when others      => r := X"FF"; g := X"80"; b := X"01";
 				end case;
 			 end if;
           

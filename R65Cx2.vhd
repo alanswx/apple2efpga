@@ -781,7 +781,7 @@ processAlu: process(clk, opcInfo, aluInput, aluCmpInput, A, T, irqActive, N, V, 
 		varC := ninebits(8);
 			
 		case opcInfo(aluMode2From to aluMode2To) is
-		--		Flags Affected: n v — — — — z c
+		--		Flags Affected: n v - - - - z c
 		--		n Set if most significant bit of result is set; else cleared.
 		--		v Set if signed overflow; cleared if valid signed result.
 		--		z Set if result is zero; else cleared.

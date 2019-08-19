@@ -137,8 +137,11 @@ architecture rtl of apple2 is
   
   signal R_W_n     : std_logic;
 
+  signal reset_n : std_logic;
+
 begin
 
+  reset_n<= not reset;
   CLK_2M <= Q3;
 
   ram_addr <= CPU_RAM_ADDR when PHASE_ZERO = '1' else VIDEO_ADDRESS;
@@ -444,7 +447,7 @@ begin
       mode     => "00",
       clk      => CLK_14M,
       enable   => CPU_EN,
-      res_n    => not reset,
+      res_n    => reset_n,
 
       IRQ_n    => IRQ_N,
       NMI_n    => NMI_N,
@@ -456,7 +459,7 @@ begin
 
   cpu65c02: entity work.R65C02
     port map (
-        reset => not reset,
+        reset => reset_n,
         clk => CLK_14M,
         enable => CPU_EN,
         nmi_n => NMI_N,
@@ -469,7 +472,7 @@ begin
 
   -- Original Apple had asynchronous ROMs.  We use a synchronous ROM
   -- that needs its address earlier, hence the odd clock.
-  roms : work.spram
+  roms : entity work.spram
   generic map (14,8,"../roms/apple2e.mif")
   port map (
    address => std_logic_vector(rom_addr),

@@ -38,6 +38,10 @@ use work.ghdl_access.all;
 
 
 ----
+ signal dram : std_logic_vector(7 downto 0);
+ signal daux : std_logic_vector(7 downto 0);
+ signal ramn_we : std_logic;
+ signal ramaux_we: std_logic;
 
   signal CLK_28M, CLK_14M, CLK_2M, CLK_2M_D, PHASE_ZERO : std_logic;
   signal clk_div : unsigned(1 downto 0);
@@ -306,7 +310,27 @@ use work.ghdl_access.all;
  -- LED <= not (D1_ACTIVE or D2_ACTIVE);
 
 
+ DO <= std_logic_vector(dram) & std_logic_vector(daux);
+ ramn_we <= ram_we and  not aux;
+ ramaux_we <= ram_we and  aux;
 
+  ram: entity work.spram
+  generic map (25,8)
+  port map (
+   address => ram_addr, 
+   clock => CLK_2M,
+   data => ram_di,
+   wren => ramn_we,
+   q => dram);
+
+  ramaux: entity work.spram
+  generic map (25,8)
+  port map (
+   address => ram_addr, 
+   clock => CLK_2M,
+   data => ram_di,
+   wren => ramaux_we,
+   q => daux);
 	    
 
 color<= std_logic_vector(r) & std_logic_vector(g) & std_logic_vector(b);
@@ -364,6 +388,8 @@ begin
  write(l,String'("clk"));
  write(l,clk_in);
  writeline(output,l);
+ write(l,String'("ram_addr"));
+ write(l,ram_addr);
  --write(l,String'("csync"));
  --write(l,csync);
  --writeline(output,l);

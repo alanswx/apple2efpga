@@ -24,7 +24,7 @@ use work.ghdl_access.all;
 
       -- Inputs
       signal clk_in  : std_logic := '0';
-      signal reset   : std_logic := '0';
+      signal sim_reset   : std_logic := '0';
       -- Outputs
       signal clk_out : std_logic;
       constant clk_in_t : time := 71 ns; 
@@ -42,7 +42,7 @@ use work.ghdl_access.all;
  signal daux : std_logic_vector(7 downto 0);
  signal ramn_we : std_logic;
  signal ramaux_we: std_logic;
-
+signal STATUS_7,STATUS_0: std_logic;
   signal CLK_28M, CLK_14M, CLK_2M, CLK_2M_D, PHASE_ZERO : std_logic;
   signal clk_div : unsigned(1 downto 0);
   signal IO_SELECT, DEVICE_SELECT : std_logic_vector(7 downto 0);
@@ -69,7 +69,7 @@ use work.ghdl_access.all;
 
   signal flash_clk : unsigned(22 downto 0) := (others => '0');
   signal power_on_reset : std_logic := '1';
- -- signal reset : std_logic;
+ signal reset : std_logic;
 
   signal D1_ACTIVE, D2_ACTIVE : std_logic;
   signal track_addr : unsigned(13 downto 0);
@@ -152,9 +152,9 @@ use work.ghdl_access.all;
   power_on : process(CLK_14M)
   begin
     if rising_edge(CLK_14M) then
-      reset <= status(0) or power_on_reset;
+      reset <= STATUS_0 or power_on_reset;
 
-      if buttons(1)='1' or status(7) = '1' then
+      if  STATUS_7 = '1' then
         power_on_reset <= '1';
         flash_clk <= (others=>'0');
       else
@@ -216,15 +216,17 @@ use work.ghdl_access.all;
     end if;
   end process;
 
-  COLOR_LINE_CONTROL <= COLOR_LINE and not (status(2) or status(3));  -- Color or B&W mode
-  SCREEN_MODE <= status(3 downto 2); -- 00: Color, 01: B&W, 10:Green, 11: Amber
-  
+ -- COLOR_LINE_CONTROL <= COLOR_LINE and not (status(2) or status(3));  -- Color or B&W mode
+  COLOR_LINE_CONTROL <= '1';
+  --SCREEN_MODE <= status(3 downto 2); -- 00: Color, 01: B&W, 10:Green, 11: Amber
+  SCREEN_MODE <= "00";
 
-  
+  STATUS_7<= sim_reset;
+  STATUS_0 <='0';
   -- Simulate power up on cold reset to go to the disk boot routine
-  ram_we   <= we_ram when status(7) = '0' else '1';
-  ram_addr <= "000000000" & std_logic_vector(a_ram) when status(7) = '0' else std_logic_vector(to_unsigned(1012,ram_addr'length)); -- $3F4
-  ram_di   <= std_logic_vector(D) when status(7) = '0' else "00000000";
+  ram_we   <= we_ram when STATUS_7 = '0' else '1';
+  ram_addr <= "000000000" & std_logic_vector(a_ram) when STATUS_7 = '0' else std_logic_vector(to_unsigned(1012,ram_addr'length)); -- $3F4
+  ram_di   <= std_logic_vector(D) when STATUS_7 = '0' else "00000000";
 
   PD <= PSG_DO when IO_SELECT(4) = '1' else DISK_DO;
 
@@ -379,17 +381,19 @@ end process;
 --end process;
 
 
-process(clk_in)
+process(CLK_14M)
 variable l: line;
 begin
- write(l,String'("reset:"));
- write(l,reset);
- writeline(output,l);
- write(l,String'("clk"));
- write(l,clk_in);
- writeline(output,l);
- write(l,String'("ram_addr"));
- write(l,ram_addr);
+ --write(l,String'("reset:"));
+ --write(l,reset);
+ --writeline(output,l);
+ --write(l,String'("clk"));
+ --write(l,clk_in);
+ write(l,String'("CLK_14M"));
+ write(l,CLK_14M);
+ --writeline(output,l);
+ --write(l,String'("ram_addr"));
+ --write(l,ram_addr);
  --write(l,String'("csync"));
  --write(l,csync);
  --writeline(output,l);
@@ -423,9 +427,9 @@ end process;
       -- Processing.
       stimuli: process
       begin
-        reset <= '0'; -- Initial conditions.
+        sim_reset <= '0'; -- Initial conditions.
         wait for 100 ns;
-        reset <= '1'; -- Down to work!
+        sim_reset <= '1'; -- Down to work!
         --dpi_vga_init(320,240);
         dpi_vga_init(640,400);
             wait;
